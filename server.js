@@ -1,7 +1,4 @@
-import fetch, { Request, Response } from "node-fetch"; // Add this
-globalThis.Request = Request; // Polyfill Request
-globalThis.Response = Response; // Polyfill Response
-
+import fetch, { Request, Response } from "node-fetch"; 
 import { createBareServer } from "@tomphttp/bare-server-node";
 import express from "express";
 import { createServer } from "node:http";
