@@ -1,15 +1,16 @@
-import wisp from "wisp-server-node"
-import { createBareServer } from "@tomphttp/bare-server-node"
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet"
-import { epoxyPath } from "@mercuryworkshop/epoxy-transport"
-import { bareModulePath } from "@mercuryworkshop/bare-as-module3"
-import { baremuxPath } from "@mercuryworkshop/bare-mux/node"
+import wisp from "wisp-server-node";
+import { createBareServer } from "@tomphttp/bare-server-node";
+import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
+import { epoxyPath } from "@mercuryworkshop/epoxy-transport";
+import { bareModulePath } from "@mercuryworkshop/bare-as-module3";
+import { baremuxPath } from "@mercuryworkshop/bare-mux/node";
 import express from "express";
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { IncomingMessage, ServerResponse } from "node:http"; // Importing Node's http types
 
-const bare = createBareServer("/bare/")
+const bare = createBareServer("/bare/");
 const __dirname = join(fileURLToPath(import.meta.url), "..");
 const app = express();
 const publicPath = "public"; // if you renamed your directory to something else other than public
@@ -27,27 +28,39 @@ app.use((req, res) => {
 
 const server = createServer();
 
+// Handling the HTTP requests
 server.on("request", (req, res) => {
+    console.log(req);  // Log the `req` object to inspect it
+    // Ensure the request is in the correct format before passing to bare
     if (bare.shouldRoute(req)) {
-        bare.routeRequest(req, res);
+        // Ensure req is compatible with bare-server
+        if (req instanceof IncomingMessage && res instanceof ServerResponse) {
+            bare.routeRequest(req, res); // Route the request using bare-server
+        } else {
+            console.error('Request is not a valid HTTP IncomingMessage');
+            res.statusCode = 500;
+            res.end('Internal Server Error');
+        }
     } else {
-        app(req, res);
+        app(req, res);  // Pass to Express if not routed by Bare
     }
 });
 
+// Handling WebSocket upgrades
 server.on("upgrade", (req, socket, head) => {
     if (req.url.endsWith("/wisp/")) {
-        wisp.routeRequest(req, socket, head);
+        wisp.routeRequest(req, socket, head); // Handle WISP upgrade request
     } else if (bare.shouldRoute(req)) {
-        bare.routeUpgrade(req, socket, head);
+        bare.routeUpgrade(req, socket, head); // Handle upgrade for Bare
     } else {
-        socket.end();
+        socket.end(); // Close socket if no route matches
     }
 });
 
+// Port configuration
 let port = parseInt(process.env.PORT || "");
 
-if (isNaN(port)) port = 3000; // set your port
+if (isNaN(port)) port = 3000; // default to port 3000 if PORT is not set
 
 server.on("listening", () => {
     const address = server.address();
@@ -60,6 +73,7 @@ server.on("listening", () => {
     );
 });
 
+// Graceful shutdown handling
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
@@ -70,6 +84,7 @@ function shutdown() {
     process.exit(0);
 }
 
+// Start listening
 server.listen({
     port,
 });
