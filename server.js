@@ -26,27 +26,18 @@ app.use((req, res) => {
     res.sendFile(join(__dirname, publicPath, "404.html")); // change to your 404 page
 });
 
-const server = createServer();
-
-// Handling the HTTP requests
-server.on("request", (req, res) => {
-    console.log(req);  // Log the `req` object to inspect it
-    // Ensure the request is in the correct format before passing to bare
+const server = createServer((req, res) => {
+    // Ensure we are working with the raw Node.js request object
     if (bare.shouldRoute(req)) {
-        // Ensure req is compatible with bare-server
-        if (req instanceof IncomingMessage && res instanceof ServerResponse) {
-            bare.routeRequest(req, res); // Route the request using bare-server
-        } else {
-            console.error('Request is not a valid HTTP IncomingMessage');
-            res.statusCode = 500;
-            res.end('Internal Server Error');
-        }
+        // Pass the raw HTTP request and response objects to Bare
+        bare.routeRequest(req, res); // Route the request using bare-server
     } else {
-        app(req, res);  // Pass to Express if not routed by Bare
+        // If not handled by Bare, pass it to Express
+        app(req, res);
     }
 });
 
-// Handling WebSocket upgrades
+// Handle WebSocket upgrades
 server.on("upgrade", (req, socket, head) => {
     if (req.url.endsWith("/wisp/")) {
         wisp.routeRequest(req, socket, head); // Handle WISP upgrade request
