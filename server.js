@@ -9,13 +9,9 @@ const bare = createBareServer("/bare/");
 const app = express();
 const publicPath = "public";
 
-// Load our publicPath first and prioritize it over 
 app.use(express.static(publicPath));
-// Load vendor files last.
-// The vendor's config.js won't conflict with our config.js inside the publicPath directory.
-app.use("/szvy/", express.static(uvPath));
+app.use("/static/uv/", express.static(uvPath));
 
-// Error for everything else
 app.use((req, res) => {
   res.status(404);
   res.sendFile(join(publicPath, "404.html"));
@@ -24,8 +20,15 @@ app.use((req, res) => {
 const server = createServer();
 
 server.on("request", (req, res) => {
+  console.log(`Request: ${req.method} ${req.url}`); // Debug
   if (bare.shouldRoute(req)) {
-    bare.routeRequest(req, res);
+    try {
+      bare.routeRequest(req, res);
+    } catch (err) {
+      console.error("Error in routeRequest:", err);
+      res.writeHead(500);
+      res.end("Internal Server Error");
+    }
   } else {
     app(req, res);
   }
@@ -39,15 +42,10 @@ server.on("upgrade", (req, socket, head) => {
   }
 });
 
-let port = parseInt(process.env.PORT || "");
+const port = parseInt(process.env.PORT || "3000");
 
-if (isNaN(port)) port = 3000;
-
-server.on("listening", () => {
+server.listen(port, () => {
   const address = server.address();
-
-  // by default we are listening on 0.0.0.0 (every interface)
-  // we just need to list a few
   console.log("Listening on:");
   console.log(`\thttp://localhost:${address.port}`);
   console.log(`\thttp://${hostname()}:${address.port}`);
@@ -58,7 +56,6 @@ server.on("listening", () => {
   );
 });
 
-// https://expressjs.com/en/advanced/healthcheck-graceful-shutdown.html
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
@@ -68,7 +65,3 @@ function shutdown() {
   bare.close();
   process.exit(0);
 }
-
-server.listen({
-  port,
-});
