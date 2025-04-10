@@ -15,8 +15,8 @@ app.use("/static/uv/", express.static(uvPath));
 
 // Custom 404 fallback
 app.use((req, res) => {
-  res.status(404);
-  res.sendFile(join(publicPath, "404.html"));
+    res.status(404);
+    res.sendFile(join(__dirname, publicPath, "404.html")); // change to your 404 page
 });
 
 // Create and attach bare + express to the server
