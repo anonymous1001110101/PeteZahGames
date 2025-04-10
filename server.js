@@ -4,6 +4,7 @@ import { createServer } from "node:http";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
 import { join } from "node:path";
 import { hostname } from "node:os";
+import { fileURLToPath } from "node:url";
 
 const bare = createBareServer("/bare/");
 const app = express();
@@ -14,10 +15,9 @@ app.use(express.static(publicPath));
 app.use("/static/uv/", express.static(uvPath));
 
 // Custom 404 fallback
-app.use((req, res) => {
-    res.status(404);
-    res.sendFile(join(__dirname, publicPath, "404.html")); // change to your 404 page
-});
+res
+  .status(404)
+  .sendFile(path.join(__dirname, publicPath, "404.html"));
 
 // Create and attach bare + express to the server
 const server = createServer();
