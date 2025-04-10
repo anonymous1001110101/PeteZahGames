@@ -2,9 +2,13 @@ import { createBareServer } from "@tomphttp/bare-server-node";
 import express from "express";
 import { createServer } from "node:http";
 import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import { join } from "node:path";
+import path, { join } from "node:path";
 import { hostname } from "node:os";
 import { fileURLToPath } from "node:url";
+
+// Fix __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const bare = createBareServer("/bare/");
 const app = express();
@@ -17,7 +21,7 @@ app.use("/static/uv/", express.static(uvPath));
 // Custom 404 fallback
 app.use((req, res) => {
     res.status(404);
-    res.sendFile(join(__dirname, publicPath, "404.html")); // change to your 404 page
+    res.sendFile(join(__dirname, publicPath, "404.html")); // Now works in ESM
 });
 
 // Create and attach bare + express to the server
