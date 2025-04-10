@@ -11,7 +11,7 @@ const app = express();
 const publicPath = "public";
 
 app.use(express.static(publicPath));
-app.use("/szvy/", express.static(uvPath));
+app.use("/static/uv/", express.static(uvPath));
 
 app.use((req, res) => {
   res.status(404);
