@@ -1,30 +1,23 @@
-import { createBareServer } from "@tomphttp/bare-server-node";
-import express from "express";
-import { createServer } from "node:http";
-import { uvPath } from "@titaniumnetwork-dev/ultraviolet";
-import path, { join } from "node:path";
-import { hostname } from "node:os";
-import { fileURLToPath } from "node:url";
-
-// Fix __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const { createBareServer } = require("@tomphttp/bare-server-node");
+const express = require("express");
+const { createServer } = require("node:http");
+const { uvPath } = require("@titaniumnetwork-dev/ultraviolet");
+const { hostname } = require("node:os");
+const { join } = require("path");
+const wisp = require("wisp-server-node");
+const { baremuxPath } = require('@mercuryworkshop/bare-mux/node');
+const fs = require('fs');
+const path = require('path');
+const archiver = require('archiver');
 
 const bare = createBareServer("/bare/");
 const app = express();
-const publicPath = "public";
 
-// Serve static files
-app.use(express.static(publicPath));
-app.use("/static/uv/", express.static(uvPath));
+app.use(express.static("./public"));
+app.use("/uv/", express.static(uvPath));
+app.use('/baremux/', express.static(baremuxPath));
 
-// Custom 404 fallback
-app.use((req, res) => {
-    res.status(404);
-    res.sendFile(join(__dirname, publicPath, "404.html")); // Now works in ESM
-});
 
-// Create and attach bare + express to the server
 const server = createServer();
 
 server.on("request", (req, res) => {
@@ -38,24 +31,22 @@ server.on("request", (req, res) => {
 server.on("upgrade", (req, socket, head) => {
   if (bare.shouldRoute(req)) {
     bare.routeUpgrade(req, socket, head);
+  } else if (req.url.endsWith('/wisp/')) {
+    wisp.routeRequest(req, socket, head);
   } else {
     socket.end();
   }
 });
 
-// Start server
-const port = parseInt(process.env.PORT || "3000");
+let port = parseInt(process.env.PORT, 10);
+if (isNaN(port)) port = 3000;
 
-server.listen({ port }, () => {
+server.on("listening", () => {
   const address = server.address();
   console.log("Listening on:");
   console.log(`\thttp://localhost:${address.port}`);
   console.log(`\thttp://${hostname()}:${address.port}`);
-  console.log(
-    `\thttp://${
-      address.family === "IPv6" ? `[${address.address}]` : address.address
-    }:${address.port}`
-  );
+  console.log(`\thttp://${address.family === "IPv6" ? `[${address.address}]` : address.address}:${address.port}`);
 });
 
 // Graceful shutdown
@@ -68,3 +59,5 @@ function shutdown() {
   bare.close();
   process.exit(0);
 }
+
+server.listen({ port });
