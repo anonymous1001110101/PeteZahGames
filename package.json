@@ -1,14 +1,4 @@
 {
-  "name": "PeteZah",
-  "version": "1.0.0",
-  "description": "an open-source unblocked games/proxy website",
-  "engines": {
-    "npm": ">=9.0.0",
-    "node": ">=18.0.0"
-  },
-  "scripts": {
-    "start": "node server.js"
-  },
   "dependencies": {
     "@mercuryworkshop/bare-as-module3": "^2.2.2",
     "@mercuryworkshop/bare-mux": "^2.0.3",
