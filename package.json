@@ -11,7 +11,6 @@
   },
   "dependencies": {
     "@nebula-services/dynamic": "^0.7.2-patch.2",
-    "@sweetalert2/theme-borderless": "^5.0.18",
     "@titaniumnetwork-dev/ultraviolet": "^3.2.7",
     "@tomphttp/bare-server-node": "2.0.2",
     "@mercuryworkshop/bare-mux": "^2.0.9",
